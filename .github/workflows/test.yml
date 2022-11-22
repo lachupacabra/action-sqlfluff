@@ -12,16 +12,12 @@ jobs:
       fail-fast: false
       matrix:
         sqlfluff:
-          - "1.0.0"
-          - "1.1.0"
-          - "1.2.0"
-          - "1.3.0"
           - "1.4.2"
         config:
           - ".sqlfluff.bigquery"
           - ".sqlfluff.postgres"
           - ".sqlfluff.redshift"
-          - ".sqlfluff.snowflake"
+          - ".sqlfluff.snowflak "
           - ".sqlfluff.spark"
     steps:
       - uses: actions/checkout@v2
@@ -57,10 +53,6 @@ jobs:
       fail-fast: false
       matrix:
         sqlfluff:
-          - "1.0.0"
-          - "1.1.0"
-          - "1.2.0"
-          - "1.3.0"
           - "1.4.2"
         config:
           - ".sqlfluff.bigquery"
