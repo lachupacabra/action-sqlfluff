@@ -21,8 +21,8 @@ echo "$changed_files"
 # Halt the job
 if [[ "${changed_files}" == "" ]]; then
   echo "There is no changed files. The action doesn't scan files."
-  echo "::set-output name=sqlfluff-exit-code::0"
-  echo "::set-output name=reviewdog-return-code::0"
+  echo "sqlfluff-exit-code=0" >> "$GITHUB_OUTPUT"
+  echo "reviewdog-return-code=0" >> "$GITHUB_OUTPUT"
   exit 0
 fi
 echo '::endgroup::'
@@ -75,8 +75,8 @@ if [[ "${SQLFLUFF_COMMAND:?}" == "lint" ]]; then
     tee "$lint_results"
   sqlfluff_exit_code=$?
 
-  echo "::set-output name=sqlfluff-results::$(cat <"$lint_results" | jq -r -c '.')" # Convert to a single line
-  echo "::set-output name=sqlfluff-exit-code::${sqlfluff_exit_code}"
+  echo "sqlfluff-results=$(cat <"$lint_results" | jq -r -c '.')" >> "$GITHUB_OUTPUT" # Convert to a single line
+  echo "sqlfluff-exit-code=${sqlfluff_exit_code}" >> "$GITHUB_OUTPUT"
 
   set -Eeuo pipefail
   echo '::endgroup::'
@@ -99,8 +99,8 @@ if [[ "${SQLFLUFF_COMMAND:?}" == "lint" ]]; then
       -level="${REVIEWDOG_LEVEL}"
   reviewdog_return_code="${PIPESTATUS[1]}"
 
-  echo "::set-output name=sqlfluff-results-rdjson::$(cat <"$lint_results_rdjson" | jq -r -c '.')" # Convert to a single line
-  echo "::set-output name=reviewdog-return-code::${reviewdog_return_code}"
+  echo "sqlfluff-results-rdjson=$(cat <"$lint_results_rdjson" | jq -r -c '.')" >> "$GITHUB_OUTPUT"# Convert to a single line
+  echo "reviewdog-return-code=${reviewdog_return_code}" >> "$GITHUB_OUTPUT"
 
   set -Eeuo pipefail
   echo '::endgroup::'
@@ -112,7 +112,7 @@ if [[ "${SQLFLUFF_COMMAND:?}" == "lint" ]]; then
 elif [[ "${SQLFLUFF_COMMAND}" == "fix" ]]; then
   echo '::group:: Running sqlfluff 🐶 ...'
   # Allow failures now, as reviewdog handles them
-  set +Eeuo pipefail
+
   # shellcheck disable=SC2086,SC2046
   sqlfluff fix --force \
     $(if [[ "x${SQLFLUFF_CONFIG}" != "x" ]]; then echo "--config ${SQLFLUFF_CONFIG}"; fi) \
@@ -124,16 +124,15 @@ elif [[ "${SQLFLUFF_COMMAND}" == "fix" ]]; then
     $(if [[ "x${SQLFLUFF_DISABLE_NOQA}" != "x" ]]; then echo "--disable-noqa ${SQLFLUFF_DISABLE_NOQA}"; fi) \
     $(if [[ "x${SQLFLUFF_DIALECT}" != "x" ]]; then echo "--dialect ${SQLFLUFF_DIALECT}"; fi) \
     $changed_files
-  sqlfluff_exit_code=$?   
-  echo "::set-output name=sqlfluff-exit-code::${sqlfluff_exit_code}"
-  
-  set -Eeuo pipefail
+#  exit 0
+#  echo "sqlfluff-exit-code=${sqlfluff_exit_code}" >> "$GITHUB_OUTPUT"
+
   echo '::endgroup::'
 
   # SEE https://github.com/reviewdog/action-suggester/blob/master/script.sh
   echo '::group:: Running reviewdog 🐶 ...'
   # Allow failures now, as reviewdog handles them
-  set +Eeuo pipefail
+#  set +Eeuo pipefail
 
   # Suggest the differences
   temp_file=$(mktemp)
@@ -152,7 +151,7 @@ elif [[ "${SQLFLUFF_COMMAND}" == "fix" ]]; then
 
   # Clean up
   git stash drop || true
-  set -Eeuo pipefail
+
   echo '::endgroup::'
 
   exit 0
