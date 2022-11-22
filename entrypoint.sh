@@ -124,7 +124,7 @@ elif [[ "${SQLFLUFF_COMMAND}" == "fix" ]]; then
     $(if [[ "x${SQLFLUFF_DISABLE_NOQA}" != "x" ]]; then echo "--disable-noqa ${SQLFLUFF_DISABLE_NOQA}"; fi) \
     $(if [[ "x${SQLFLUFF_DIALECT}" != "x" ]]; then echo "--dialect ${SQLFLUFF_DIALECT}"; fi) \
     $changed_files
-  exit 0
+#  exit 0
 #  echo "sqlfluff-exit-code=${sqlfluff_exit_code}" >> "$GITHUB_OUTPUT"
 
   echo '::endgroup::'
@@ -132,7 +132,7 @@ elif [[ "${SQLFLUFF_COMMAND}" == "fix" ]]; then
   # SEE https://github.com/reviewdog/action-suggester/blob/master/script.sh
   echo '::group:: Running reviewdog 🐶 ...'
   # Allow failures now, as reviewdog handles them
-  set +Eeuo pipefail
+#  set +Eeuo pipefail
 
   # Suggest the differences
   temp_file=$(mktemp)
