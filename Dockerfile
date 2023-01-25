@@ -23,5 +23,9 @@ RUN wget -O - -q https://raw.githubusercontent.com/reviewdog/reviewdog/master/in
 
 COPY . "$WORKING_DIRECTORY"
 
+RUN pip install poetry
+RUN poetry export --without-hashes -f requirements.txt > requirements.txt && \
+    pip install -r requirements.txt
+
 # Set the entrypoint
 ENTRYPOINT ["/bin/bash", "-c", "/${WORKING_DIRECTORY}/entrypoint.sh"]
