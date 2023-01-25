@@ -29,7 +29,9 @@ echo '::endgroup::'
 
 # Install sqlfluff
 echo '::group::🐶 Installing sqlfluff ... https://github.com/sqlfluff/sqlfluff'
-# pip install --no-cache-dir -r "${SCRIPT_DIR}/requirements/requirements.txt" -- dependencies are now in poetry
+pip install poetry
+poetry export --without-hashes -f requirements.txt > requirements.txt && \
+    pip install -r requirements.txt
 # Make sure the version of sqlfluff
 sqlfluff --version
 echo '::endgroup::'
