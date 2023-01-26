@@ -17,6 +17,7 @@ jobs:
           - "1.2.0"
           - "1.3.0"
           - "1.4.2"
+          - "1.4.5"
         config:
           - ".sqlfluff.bigquery"
           - ".sqlfluff.postgres"
@@ -50,7 +51,7 @@ jobs:
           echo '${{ steps.lint-sql.outputs.reviewdog-exit-code }}'
 
   test-fix:
-    needs: ["test-fix"]
+    needs: ["test-lint"]
     name: runner / sqlfluff (test-fix)
     runs-on: ubuntu-latest
     strategy:
@@ -62,6 +63,7 @@ jobs:
           - "1.2.0"
           - "1.3.0"
           - "1.4.2"
+          - "1.4.5"
         config:
           - ".sqlfluff.bigquery"
           - ".sqlfluff.postgres"
