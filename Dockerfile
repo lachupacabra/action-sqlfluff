@@ -23,5 +23,8 @@ RUN wget -O - -q https://raw.githubusercontent.com/reviewdog/reviewdog/master/in
 
 COPY . "$WORKING_DIRECTORY"
 
+# add default default path for the checkout action as safe
+RUN git config --global --add safe.directory /github/workspace
+
 # Set the entrypoint
 ENTRYPOINT ["/bin/bash", "-c", "/${WORKING_DIRECTORY}/entrypoint.sh"]
