@@ -11,6 +11,10 @@ export REVIEWDOG_GITHUB_API_TOKEN="${INPUT_GITHUB_TOKEN:?}"
 echo '::group::🐶 Get changed files'
 # The command is necessary to get changed files.
 # TODO Fetch only the target branch
+
+# add default default path for the checkout action as safe
+git config --global --add safe.directory /github/workspace
+
 git fetch --prune --unshallow --no-tags
 
 SQL_FILE_PATTERN="${FILE_PATTERN:?}"
