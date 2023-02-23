@@ -260,6 +260,13 @@ reviewdog version.
         </a>
     </td>
     <td align="center">
+        <a href="https://github.com/lachupacabra">
+            <img src="https://avatars.githubusercontent.com/u/59753243?v=4" width="100;" alt="lachupacabra"/>
+            <br />
+            <sub><b>Dennis Anand</b></sub>
+        </a>
+    </td>
+    <td align="center">
         <a href="https://github.com/vgw-chriskruger">
             <img src="https://avatars.githubusercontent.com/u/118869997?v=4" width="100;" alt="vgw-chriskruger"/>
             <br />
