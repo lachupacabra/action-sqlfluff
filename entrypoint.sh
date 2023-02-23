@@ -7,11 +7,11 @@ SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 
 export REVIEWDOG_GITHUB_API_TOKEN="${INPUT_GITHUB_TOKEN:?}"
 
+# Avoid 'fatal: detected dubious ownership in repository'
+git config --global --add safe.directory /github/workspace
+
 # Get changed files
 echo '::group::🐶 Get changed files'
-
-# add default default path for the checkout action as safe
-git config --global --add safe.directory /github/workspace
 
 # The command is necessary to get changed files.
 # TODO Fetch only the target branch
@@ -35,20 +35,19 @@ echo '::endgroup::'
 
 # Install sqlfluff
 echo '::group::🐶 Installing sqlfluff ... https://github.com/sqlfluff/sqlfluff'
-# pip install --no-cache-dir -r "${SCRIPT_DIR}/requirements/requirements.txt" -- dependencies are now in poetry
+pip install --no-cache-dir -r "${SCRIPT_DIR}/requirements/requirements.txt"
 # Make sure the version of sqlfluff
 sqlfluff --version
 echo '::endgroup::'
 
-# Commenting out this section to get dependencies into poetry instead
 # Install extra python modules
-# echo '::group:: Installing extra python modules'
-# if [[ "x${EXTRA_REQUIREMENTS_TXT}" != "x" ]]; then
-#   pip install --no-cache-dir -r "${EXTRA_REQUIREMENTS_TXT}"
-#   # Make sure the installed modules
-#   pip list
-# fi
-# echo '::endgroup::'
+echo '::group:: Installing extra python modules'
+if [[ "x${EXTRA_REQUIREMENTS_TXT}" != "x" ]]; then
+  pip install --no-cache-dir -r "${EXTRA_REQUIREMENTS_TXT}"
+  # Make sure the installed modules
+  pip list
+fi
+echo '::endgroup::'
 
 # Install dbt packages
 echo '::group:: Installing dbt packages'
