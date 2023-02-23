@@ -60,6 +60,11 @@ The tested sqlfluff versions in the repositories are:
 - 1.3.0
 - 1.4.5
 
+## CAUTION
+Because dbt-core==1.4 changes the implementation of custom exceptions like `CompilationException`, sqlfluff 1.4.5 or less doesn't work with dbt-core 1.4 or later.
+So, we have to use dbt-core 1.3 or less until the subsequent change is released.
+- [Handle renamed dbt exceptions by greg\-finley · Pull Request \#4317 · sqlfluff/sqlfluff](https://github.com/sqlfluff/sqlfluff/pull/4317)
+
 ## Input
 
 ```yaml
@@ -241,3 +246,45 @@ This repository uses [reviewdog/action-depup](https://github.com/reviewdog/actio
 reviewdog version.
 
 ![reviewdog depup demo](https://user-images.githubusercontent.com/3797062/73154254-170e7500-411a-11ea-8211-912e9de7c936.png)
+
+## Contributors
+<!-- readme: contributors -start -->
+<table>
+<tr>
+    <td align="center">
+        <a href="https://github.com/yu-iskw">
+            <img src="https://avatars.githubusercontent.com/u/1523515?v=4" width="100;" alt="yu-iskw"/>
+            <br />
+            <sub><b>Yu Ishikawa</b></sub>
+        </a>
+    </td>
+    <td align="center">
+        <a href="https://github.com/vgw-chriskruger">
+            <img src="https://avatars.githubusercontent.com/u/118869997?v=4" width="100;" alt="vgw-chriskruger"/>
+            <br />
+            <sub><b>Chris Kruger</b></sub>
+        </a>
+    </td>
+    <td align="center">
+        <a href="https://github.com/onesuper">
+            <img src="https://avatars.githubusercontent.com/u/977633?v=4" width="100;" alt="onesuper"/>
+            <br />
+            <sub><b>Dreamsome</b></sub>
+        </a>
+    </td>
+    <td align="center">
+        <a href="https://github.com/snyk-bot">
+            <img src="https://avatars.githubusercontent.com/u/19733683?v=4" width="100;" alt="snyk-bot"/>
+            <br />
+            <sub><b>Snyk Bot</b></sub>
+        </a>
+    </td>
+    <td align="center">
+        <a href="https://github.com/kieronellis">
+            <img src="https://avatars.githubusercontent.com/u/69465049?v=4" width="100;" alt="kieronellis"/>
+            <br />
+            <sub><b>Null</b></sub>
+        </a>
+    </td></tr>
+</table>
+<!-- readme: contributors -end -->
