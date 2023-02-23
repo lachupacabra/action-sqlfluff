@@ -13,9 +13,6 @@ git config --global --add safe.directory /github/workspace
 # Get changed files
 echo '::group::🐶 Get changed files'
 
-# add default default path for the checkout action as safe
-git config --global --add safe.directory /github/workspace
-
 # The command is necessary to get changed files.
 # TODO Fetch only the target branch
 git fetch --prune --unshallow --no-tags
