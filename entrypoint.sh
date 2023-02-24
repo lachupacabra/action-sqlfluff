@@ -77,9 +77,9 @@ if [[ "${SQLFLUFF_COMMAND:?}" == "lint" ]]; then
     $(if [[ "x${SQLFLUFF_DISABLE_NOQA}" != "x" ]]; then echo "--disable-noqa ${SQLFLUFF_DISABLE_NOQA}"; fi) \
     $(if [[ "x${IGNORE_ERRORS}" != "x" ]]; then echo "--ignore ${IGNORE_ERRORS}"; fi) \
     $(if [[ "x${SQLFLUFF_DIALECT}" != "x" ]]; then echo "--dialect ${SQLFLUFF_DIALECT}"; fi) \
-    $changed_files >>"$lint_results"
+    $changed_files |
+    tee "$lint_results"
   sqlfluff_exit_code=$?
-  cat "$lint_results"
 
   echo "name=sqlfluff-results::$(cat <"$lint_results" | jq -r -c '.')" >> $GITHUB_OUTPUT # Convert to a single line
   echo "name=sqlfluff-exit-code::${sqlfluff_exit_code}" >> $GITHUB_OUTPUT
@@ -132,9 +132,9 @@ elif [[ "${SQLFLUFF_COMMAND}" == "fix" ]]; then
     $(if [[ "x${SQLFLUFF_DIALECT}" != "x" ]]; then echo "--dialect ${SQLFLUFF_DIALECT}"; fi) \
     $(if [[ "x${IGNORE_ERRORS}" != "x" ]]; then echo "--ignore ${IGNORE_ERRORS}"; fi) \
     $(if [[ "x${SHOW_LINT_VIOLATIONS}" != "x" ]]; then echo "--show-lint-violations ${SHOW_LINT_VIOLATIONS}"; fi) \
-    $changed_files |
-    tee "$lint_results"
+    $changed_files >>"$lint_results"
   sqlfluff_exit_code=$?
+  cat "$lint_results"
 
   echo "name=sqlfluff-results::$(cat <"$lint_results" | jq -r -c '.')" >>$GITHUB_OUTPUT # Convert to a single line
   echo "name=sqlfluff-exit-code::${sqlfluff_exit_code}" >>$GITHUB_OUTPUT
