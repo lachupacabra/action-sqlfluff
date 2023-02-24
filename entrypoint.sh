@@ -158,8 +158,18 @@ elif [[ "${SQLFLUFF_COMMAND}" == "fix" ]]; then
     -fail-on-error="${REVIEWDOG_FAIL_ON_ERROR}" \
     -level="${REVIEWDOG_LEVEL}" <"${temp_file}" || exit_code=$?
 
+  # Clean up
+  git stash drop || true
+  set -Eeuo pipefail
+  echo '::endgroup::'
+
   if [[ "${SHOW_LINT_VIOLATIONS}" == "true" ]]; then
 
+    echo '::group:: Running sqlfluff linter 🐶 ...'
+    # Allow failures now, as reviewdog handles them
+    set +Eeuo pipefail
+    lint_results="sqlfluff-lint.json"
+    # shellcheck disable=SC2086,SC2046
     sqlfluff lint \
         --format json \
         $(if [[ "x${SQLFLUFF_CONFIG}" != "x" ]]; then echo "--config ${SQLFLUFF_CONFIG}"; fi) \
@@ -176,13 +186,20 @@ elif [[ "${SQLFLUFF_COMMAND}" == "fix" ]]; then
 
     echo "name=sqlfluff-results::$(cat <"$lint_results" | jq -r -c '.')" >> $GITHUB_OUTPUT # Convert to a single line
 
+    set -Eeuo pipefail
+    echo '::endgroup::'
+
+    echo '::group:: Running reviewdog linter 🐶 ...'
+    # Allow failures now, as reviewdog handles them
+    set +Eeuo pipefail
+
     lint_results_rdjson="sqlfluff-lint.rdjson"
     cat <"$lint_results" |
-    jq -r -f "${SCRIPT_DIR}/to-rdjson.jq" |
-    tee >"$lint_results_rdjson"
+        jq -r -f "${SCRIPT_DIR}/to-rdjson.jq" |
+        tee >"$lint_results_rdjson"
 
     cat <"$lint_results_rdjson" |
-    reviewdog -f=rdjson \
+        reviewdog -f=rdjson \
         -name="sqlfluff-lint" \
         -reporter="${REVIEWDOG_REPORTER}" \
         -filter-mode="${REVIEWDOG_FILTER_MODE}" \
@@ -190,13 +207,11 @@ elif [[ "${SQLFLUFF_COMMAND}" == "fix" ]]; then
         -level="${REVIEWDOG_LEVEL}"
     reviewdog_return_code="${PIPESTATUS[1]}"
 
-    echo "name=sqlfluff-results-rdjson::$(cat <"$lint_results_rdjson" | jq -r -c '.')" >>$GITHUB_OUTPUT # Convert to a single line
-  fi
+    echo "name=sqlfluff-results-rdjson::$(cat <"$lint_results_rdjson" | jq -r -c '.')" >> $GITHUB_OUTPUT # Convert to a single line
 
-  # Clean up
-  git stash drop || true
-  set -Eeuo pipefail
-  echo '::endgroup::'
+    set -Eeuo pipefail
+    echo '::endgroup::'
+  fi
 
   exit $sqlfluff_exit_code
 #   exit $exit_code
