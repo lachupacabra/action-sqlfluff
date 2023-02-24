@@ -163,54 +163,51 @@ elif [[ "${SQLFLUFF_COMMAND}" == "fix" ]]; then
   set -Eeuo pipefail
   echo '::endgroup::'
 
-  if [[ "${SHOW_LINT_VIOLATIONS}" == "true" ]]; then
+  echo '::group:: Running sqlfluff linter 🐶 ...'
+  # Allow failures now, as reviewdog handles them
+  set +Eeuo pipefail
+  lint_results="sqlfluff-lint.json"
+  # shellcheck disable=SC2086,SC2046
+  sqlfluff lint \
+    --format json \
+    $(if [[ "x${SQLFLUFF_CONFIG}" != "x" ]]; then echo "--config ${SQLFLUFF_CONFIG}"; fi) \
+    $(if [[ "x${SQLFLUFF_DIALECT}" != "x" ]]; then echo "--dialect ${SQLFLUFF_DIALECT}"; fi) \
+    $(if [[ "x${SQLFLUFF_PROCESSES}" != "x" ]]; then echo "--processes ${SQLFLUFF_PROCESSES}"; fi) \
+    $(if [[ "x${SQLFLUFF_RULES}" != "x" ]]; then echo "--rules ${SQLFLUFF_RULES}"; fi) \
+    $(if [[ "x${SQLFLUFF_EXCLUDE_RULES}" != "x" ]]; then echo "--exclude-rules ${SQLFLUFF_EXCLUDE_RULES}"; fi) \
+    $(if [[ "x${SQLFLUFF_TEMPLATER}" != "x" ]]; then echo "--templater ${SQLFLUFF_TEMPLATER}"; fi) \
+    $(if [[ "x${SQLFLUFF_DISABLE_NOQA}" != "x" ]]; then echo "--disable-noqa ${SQLFLUFF_DISABLE_NOQA}"; fi) \
+    $(if [[ "x${IGNORE_ERRORS}" != "x" ]]; then echo "--ignore ${IGNORE_ERRORS}"; fi) \
+    $(if [[ "x${SQLFLUFF_DIALECT}" != "x" ]]; then echo "--dialect ${SQLFLUFF_DIALECT}"; fi) \
+    $changed_files |
+    tee "$lint_results"
+  echo "name=sqlfluff-results::$(cat <"$lint_results" | jq -r -c '.')" >> $GITHUB_OUTPUT # Convert to a single line
 
-    echo '::group:: Running sqlfluff linter 🐶 ...'
-    # Allow failures now, as reviewdog handles them
-    set +Eeuo pipefail
-    lint_results="sqlfluff-lint.json"
-    # shellcheck disable=SC2086,SC2046
-    sqlfluff lint \
-        --format json \
-        $(if [[ "x${SQLFLUFF_CONFIG}" != "x" ]]; then echo "--config ${SQLFLUFF_CONFIG}"; fi) \
-        $(if [[ "x${SQLFLUFF_DIALECT}" != "x" ]]; then echo "--dialect ${SQLFLUFF_DIALECT}"; fi) \
-        $(if [[ "x${SQLFLUFF_PROCESSES}" != "x" ]]; then echo "--processes ${SQLFLUFF_PROCESSES}"; fi) \
-        $(if [[ "x${SQLFLUFF_RULES}" != "x" ]]; then echo "--rules ${SQLFLUFF_RULES}"; fi) \
-        $(if [[ "x${SQLFLUFF_EXCLUDE_RULES}" != "x" ]]; then echo "--exclude-rules ${SQLFLUFF_EXCLUDE_RULES}"; fi) \
-        $(if [[ "x${SQLFLUFF_TEMPLATER}" != "x" ]]; then echo "--templater ${SQLFLUFF_TEMPLATER}"; fi) \
-        $(if [[ "x${SQLFLUFF_DISABLE_NOQA}" != "x" ]]; then echo "--disable-noqa ${SQLFLUFF_DISABLE_NOQA}"; fi) \
-        $(if [[ "x${IGNORE_ERRORS}" != "x" ]]; then echo "--ignore ${IGNORE_ERRORS}"; fi) \
-        $(if [[ "x${SQLFLUFF_DIALECT}" != "x" ]]; then echo "--dialect ${SQLFLUFF_DIALECT}"; fi) \
-        $changed_files |
-        tee "$lint_results"
+  set -Eeuo pipefail
+  echo '::endgroup::'
 
-    echo "name=sqlfluff-results::$(cat <"$lint_results" | jq -r -c '.')" >> $GITHUB_OUTPUT # Convert to a single line
+  echo '::group:: Running reviewdog 🐶 ...'
+  # Allow failures now, as reviewdog handles them
+  set +Eeuo pipefail
 
-    set -Eeuo pipefail
-    echo '::endgroup::'
+  lint_results_rdjson="sqlfluff-lint.rdjson"
+  cat <"$lint_results" |
+    jq -r -f "${SCRIPT_DIR}/to-rdjson.jq" |
+    tee >"$lint_results_rdjson"
 
-    echo '::group:: Running reviewdog linter 🐶 ...'
-    # Allow failures now, as reviewdog handles them
-    set +Eeuo pipefail
+  cat <"$lint_results_rdjson" |
+    reviewdog -f=rdjson \
+      -name="sqlfluff-lint" \
+      -reporter="${REVIEWDOG_REPORTER}" \
+      -filter-mode="${REVIEWDOG_FILTER_MODE}" \
+      -fail-on-error="${REVIEWDOG_FAIL_ON_ERROR}" \
+      -level="${REVIEWDOG_LEVEL}"
+  reviewdog_return_code="${PIPESTATUS[1]}"
 
-    lint_results_rdjson="sqlfluff-lint.rdjson"
-    cat <"$lint_results" |
-        jq -r -f "${SCRIPT_DIR}/to-rdjson.jq" |
-        tee >"$lint_results_rdjson"
+  echo "name=sqlfluff-results-rdjson::$(cat <"$lint_results_rdjson" | jq -r -c '.')" >> $GITHUB_OUTPUT # Convert to a single line
 
-    cat <"$lint_results_rdjson" |
-        reviewdog -f=rdjson \
-        -name="sqlfluff-lint" \
-        -reporter="${REVIEWDOG_REPORTER}" \
-        -filter-mode="${REVIEWDOG_FILTER_MODE}" \
-        -fail-on-error="${REVIEWDOG_FAIL_ON_ERROR}" \
-        -level="${REVIEWDOG_LEVEL}"
-    reviewdog_return_code="${PIPESTATUS[1]}"
-
-    echo "name=sqlfluff-results-rdjson::$(cat <"$lint_results_rdjson" | jq -r -c '.')" >> $GITHUB_OUTPUT # Convert to a single line
-
-    set -Eeuo pipefail
-    echo '::endgroup::'
+  set -Eeuo pipefail
+  echo '::endgroup::'
   fi
 
   exit $sqlfluff_exit_code
