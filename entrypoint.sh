@@ -131,12 +131,8 @@ elif [[ "${SQLFLUFF_COMMAND}" == "fix" ]]; then
     $(if [[ "x${SQLFLUFF_DISABLE_NOQA}" != "x" ]]; then echo "--disable-noqa ${SQLFLUFF_DISABLE_NOQA}"; fi) \
     $(if [[ "x${SQLFLUFF_DIALECT}" != "x" ]]; then echo "--dialect ${SQLFLUFF_DIALECT}"; fi) \
     $(if [[ "x${IGNORE_ERRORS}" != "x" ]]; then echo "--ignore ${IGNORE_ERRORS}"; fi) \
-    $(if [[ "x${SHOW_LINT_VIOLATIONS}" != "x" ]]; then echo "--show-lint-violations ${SHOW_LINT_VIOLATIONS}"; fi) \
-    $changed_files >>"$lint_results"
+    $changed_files
   sqlfluff_exit_code=$?
-  cat "$lint_results"
-
-  echo "name=sqlfluff-results::$(cat <"$lint_results" | jq -r -c '.')" >>$GITHUB_OUTPUT # Convert to a single line
   echo "name=sqlfluff-exit-code::${sqlfluff_exit_code}" >>$GITHUB_OUTPUT
 
   set -Eeuo pipefail
@@ -163,13 +159,30 @@ elif [[ "${SQLFLUFF_COMMAND}" == "fix" ]]; then
     -level="${REVIEWDOG_LEVEL}" <"${temp_file}" || exit_code=$?
 
   if [[ "${SHOW_LINT_VIOLATIONS}" == "true" ]]; then
+
+    sqlfluff lint \
+        --format json \
+        $(if [[ "x${SQLFLUFF_CONFIG}" != "x" ]]; then echo "--config ${SQLFLUFF_CONFIG}"; fi) \
+        $(if [[ "x${SQLFLUFF_DIALECT}" != "x" ]]; then echo "--dialect ${SQLFLUFF_DIALECT}"; fi) \
+        $(if [[ "x${SQLFLUFF_PROCESSES}" != "x" ]]; then echo "--processes ${SQLFLUFF_PROCESSES}"; fi) \
+        $(if [[ "x${SQLFLUFF_RULES}" != "x" ]]; then echo "--rules ${SQLFLUFF_RULES}"; fi) \
+        $(if [[ "x${SQLFLUFF_EXCLUDE_RULES}" != "x" ]]; then echo "--exclude-rules ${SQLFLUFF_EXCLUDE_RULES}"; fi) \
+        $(if [[ "x${SQLFLUFF_TEMPLATER}" != "x" ]]; then echo "--templater ${SQLFLUFF_TEMPLATER}"; fi) \
+        $(if [[ "x${SQLFLUFF_DISABLE_NOQA}" != "x" ]]; then echo "--disable-noqa ${SQLFLUFF_DISABLE_NOQA}"; fi) \
+        $(if [[ "x${IGNORE_ERRORS}" != "x" ]]; then echo "--ignore ${IGNORE_ERRORS}"; fi) \
+        $(if [[ "x${SQLFLUFF_DIALECT}" != "x" ]]; then echo "--dialect ${SQLFLUFF_DIALECT}"; fi) \
+        $changed_files |
+        tee "$lint_results"
+
+    echo "name=sqlfluff-results::$(cat <"$lint_results" | jq -r -c '.')" >> $GITHUB_OUTPUT # Convert to a single line
+
     lint_results_rdjson="sqlfluff-lint.rdjson"
     cat <"$lint_results" |
-      jq -r -f "${SCRIPT_DIR}/to-rdjson.jq" |
-      tee >"$lint_results_rdjson"
+    jq -r -f "${SCRIPT_DIR}/to-rdjson.jq" |
+    tee >"$lint_results_rdjson"
 
     cat <"$lint_results_rdjson" |
-      reviewdog -f=rdjson \
+    reviewdog -f=rdjson \
         -name="sqlfluff-lint" \
         -reporter="${REVIEWDOG_REPORTER}" \
         -filter-mode="${REVIEWDOG_FILTER_MODE}" \
