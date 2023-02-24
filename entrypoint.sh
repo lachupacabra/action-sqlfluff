@@ -59,68 +59,15 @@ if [[ -f "${INPUT_WORKING_DIRECTORY}/packages.yml" ]]; then
 fi
 echo '::endgroup::'
 
-# Lint changed files if the mode is lint
-if [[ "${SQLFLUFF_COMMAND:?}" == "lint" ]]; then
-  echo '::group:: Running sqlfluff 🐶 ...'
-  # Allow failures now, as reviewdog handles them
-  set +Eeuo pipefail
-  lint_results="sqlfluff-lint.json"
-  # shellcheck disable=SC2086,SC2046
-  sqlfluff lint \
-    --format json \
-    $(if [[ "x${SQLFLUFF_CONFIG}" != "x" ]]; then echo "--config ${SQLFLUFF_CONFIG}"; fi) \
-    $(if [[ "x${SQLFLUFF_DIALECT}" != "x" ]]; then echo "--dialect ${SQLFLUFF_DIALECT}"; fi) \
-    $(if [[ "x${SQLFLUFF_PROCESSES}" != "x" ]]; then echo "--processes ${SQLFLUFF_PROCESSES}"; fi) \
-    $(if [[ "x${SQLFLUFF_RULES}" != "x" ]]; then echo "--rules ${SQLFLUFF_RULES}"; fi) \
-    $(if [[ "x${SQLFLUFF_EXCLUDE_RULES}" != "x" ]]; then echo "--exclude-rules ${SQLFLUFF_EXCLUDE_RULES}"; fi) \
-    $(if [[ "x${SQLFLUFF_TEMPLATER}" != "x" ]]; then echo "--templater ${SQLFLUFF_TEMPLATER}"; fi) \
-    $(if [[ "x${SQLFLUFF_DISABLE_NOQA}" != "x" ]]; then echo "--disable-noqa ${SQLFLUFF_DISABLE_NOQA}"; fi) \
-    $(if [[ "x${IGNORE_ERRORS}" != "x" ]]; then echo "--ignore ${IGNORE_ERRORS}"; fi) \
-    $(if [[ "x${SQLFLUFF_DIALECT}" != "x" ]]; then echo "--dialect ${SQLFLUFF_DIALECT}"; fi) \
-    $changed_files |
-    tee "$lint_results"
-  sqlfluff_exit_code=$?
-
-  echo "name=sqlfluff-results::$(cat <"$lint_results" | jq -r -c '.')" >> $GITHUB_OUTPUT # Convert to a single line
-  echo "name=sqlfluff-exit-code::${sqlfluff_exit_code}" >> $GITHUB_OUTPUT
-
-  set -Eeuo pipefail
-  echo '::endgroup::'
-
-  echo '::group:: Running reviewdog 🐶 ...'
-  # Allow failures now, as reviewdog handles them
-  set +Eeuo pipefail
-
-  lint_results_rdjson="sqlfluff-lint.rdjson"
-  cat <"$lint_results" |
-    jq -r -f "${SCRIPT_DIR}/to-rdjson.jq" |
-    tee >"$lint_results_rdjson"
-
-  cat <"$lint_results_rdjson" |
-    reviewdog -f=rdjson \
-      -name="sqlfluff-lint" \
-      -reporter="${REVIEWDOG_REPORTER}" \
-      -filter-mode="${REVIEWDOG_FILTER_MODE}" \
-      -fail-on-error="${REVIEWDOG_FAIL_ON_ERROR}" \
-      -level="${REVIEWDOG_LEVEL}"
-  reviewdog_return_code="${PIPESTATUS[1]}"
-
-  echo "name=sqlfluff-results-rdjson::$(cat <"$lint_results_rdjson" | jq -r -c '.')" >> $GITHUB_OUTPUT # Convert to a single line
-  echo "name=reviewdog-return-code::${reviewdog_return_code}" >> $GITHUB_OUTPUT
-
-  set -Eeuo pipefail
-  echo '::endgroup::'
-
-  exit $sqlfluff_exit_code
-# END OF lint
-
 # Format changed files if the mode is fix
-elif [[ "${SQLFLUFF_COMMAND}" == "fix" ]]; then
+if [[ "${SQLFLUFF_COMMAND}" == "fix" ]]; then
   echo '::group:: Running sqlfluff 🐶 ...'
   # Allow failures now, as reviewdog handles them
   set +Eeuo pipefail
+  fix_results="fix_file"
   # shellcheck disable=SC2086,SC2046
   sqlfluff fix --force \
+    --show-lint-violations \
     $(if [[ "x${SQLFLUFF_CONFIG}" != "x" ]]; then echo "--config ${SQLFLUFF_CONFIG}"; fi) \
     $(if [[ "x${SQLFLUFF_DIALECT}" != "x" ]]; then echo "--dialect ${SQLFLUFF_DIALECT}"; fi) \
     $(if [[ "x${SQLFLUFF_PROCESSES}" != "x" ]]; then echo "--processes ${SQLFLUFF_PROCESSES}"; fi) \
@@ -129,10 +76,23 @@ elif [[ "${SQLFLUFF_COMMAND}" == "fix" ]]; then
     $(if [[ "x${SQLFLUFF_TEMPLATER}" != "x" ]]; then echo "--templater ${SQLFLUFF_TEMPLATER}"; fi) \
     $(if [[ "x${SQLFLUFF_DISABLE_NOQA}" != "x" ]]; then echo "--disable-noqa ${SQLFLUFF_DISABLE_NOQA}"; fi) \
     $(if [[ "x${SQLFLUFF_DIALECT}" != "x" ]]; then echo "--dialect ${SQLFLUFF_DIALECT}"; fi) \
-    $changed_files
-  sqlfluff_exit_code=$?   
+    $(if [[ "x${IGNORE_ERRORS}" != "x" ]]; then echo "--ignore ${IGNORE_ERRORS}"; fi) \
+    $changed_files >> "$fix_results"
+  sqlfluff_exit_code=$?
+  cat "$fix_results"
   echo "name=sqlfluff-exit-code::${sqlfluff_exit_code}" >> $GITHUB_OUTPUT
-  
+
+  # Get all unfixable errors in comma delimitted format
+  unfixable_errors=$(sed '1,/unfixable/d' "$fix_results" |
+    grep "L:" |
+    awk -F "|" '{print $3}' |
+    sed 's/ //g' |
+    uniq |
+    tr '\n' ',' |
+    sed 's/,$//')
+
+  if [[ "x${unfixable_errors}" != "x" ]]; then SQLFLUFF_RULES="${unfixable_errors}"; fi
+
   set -Eeuo pipefail
   echo '::endgroup::'
 
@@ -160,10 +120,70 @@ elif [[ "${SQLFLUFF_COMMAND}" == "fix" ]]; then
   git stash drop || true
   set -Eeuo pipefail
   echo '::endgroup::'
-
-  exit 0
-  # exit $exit_code
 # END OF fix
+fi
+
+if [[ "x${unfixable_errors}" != "x" || "${SQLFLUFF_COMMAND}" == "lint" ]]; then
+  # Lint changed files if the mode is lint
+  echo '::group:: Running sqlfluff linter 🐶 ...'
+  # Allow failures now, as reviewdog handles them
+  set +Eeuo pipefail
+  lint_results="sqlfluff-lint.json"
+  # shellcheck disable=SC2086,SC2046
+  sqlfluff lint \
+    --format json \
+    $(if [[ "x${SQLFLUFF_CONFIG}" != "x" ]]; then echo "--config ${SQLFLUFF_CONFIG}"; fi) \
+    $(if [[ "x${SQLFLUFF_DIALECT}" != "x" ]]; then echo "--dialect ${SQLFLUFF_DIALECT}"; fi) \
+    $(if [[ "x${SQLFLUFF_PROCESSES}" != "x" ]]; then echo "--processes ${SQLFLUFF_PROCESSES}"; fi) \
+    $(if [[ "x${SQLFLUFF_RULES}" != "x" ]]; then echo "--rules ${SQLFLUFF_RULES}"; fi) \
+    $(if [[ "x${SQLFLUFF_EXCLUDE_RULES}" != "x" ]]; then echo "--exclude-rules ${ignored_rules}"; fi) \
+    $(if [[ "x${SQLFLUFF_TEMPLATER}" != "x" ]]; then echo "--templater ${SQLFLUFF_TEMPLATER}"; fi) \
+    $(if [[ "x${SQLFLUFF_DISABLE_NOQA}" != "x" ]]; then echo "--disable-noqa ${SQLFLUFF_DISABLE_NOQA}"; fi) \
+    $(if [[ "x${IGNORE_ERRORS}" != "x" ]]; then echo "--ignore ${IGNORE_ERRORS}"; fi) \
+    $(if [[ "x${SQLFLUFF_DIALECT}" != "x" ]]; then echo "--dialect ${SQLFLUFF_DIALECT}"; fi) \
+    $changed_files |
+    tee "$lint_results"
+
+  # If lint change exit code
+  if [[ "${SQLFLUFF_COMMAND:?}" == "lint" ]]; then
+    sqlfluff_exit_code=$?
+    echo "name=sqlfluff-exit-code::${sqlfluff_exit_code}" >> $GITHUB_OUTPUT
+  fi
+
+  echo "name=sqlfluff-results::$(cat <"$lint_results" | jq -r -c '.')" >> $GITHUB_OUTPUT # Convert to a single line
+
+  set -Eeuo pipefail
+  echo '::endgroup::'
+
+  echo '::group:: Running reviewdog linter 🐶 ...'
+  # Allow failures now, as reviewdog handles them
+  set +Eeuo pipefail
+
+  lint_results_rdjson="sqlfluff-lint.rdjson"
+  cat <"$lint_results" |
+    jq -r -f "${SCRIPT_DIR}/to-rdjson.jq" |
+    tee >"$lint_results_rdjson"
+
+  cat <"$lint_results_rdjson" |
+    reviewdog -f=rdjson \
+      -name="sqlfluff-lint" \
+      -reporter="${REVIEWDOG_REPORTER}" \
+      -filter-mode="${REVIEWDOG_FILTER_MODE}" \
+      -fail-on-error="${REVIEWDOG_FAIL_ON_ERROR}" \
+      -level="${REVIEWDOG_LEVEL}"
+  reviewdog_return_code="${PIPESTATUS[1]}"
+
+  echo "name=sqlfluff-results-rdjson::$(cat <"$lint_results_rdjson" | jq -r -c '.')" >> $GITHUB_OUTPUT # Convert to a single line
+  echo "name=reviewdog-return-code::${reviewdog_return_code}" >> $GITHUB_OUTPUT
+
+  set -Eeuo pipefail
+  echo '::endgroup::'
+
+  exit $sqlfluff_exit_code
+# END OF lint
+# still need to exit if no unfixable errors are found
+elif [[ "${SQLFLUFF_COMMAND}" == "fix" ]]; then
+  exit $sqlfluff_exit_code
 else
   echo 'ERROR: SQLFLUFF_COMMAND must be one of lint and fix'
   exit 1
