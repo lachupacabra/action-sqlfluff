@@ -162,7 +162,7 @@ elif [[ "${SQLFLUFF_COMMAND}" == "fix" ]]; then
     -fail-on-error="${REVIEWDOG_FAIL_ON_ERROR}" \
     -level="${REVIEWDOG_LEVEL}" <"${temp_file}" || exit_code=$?
 
-  if [[ "x${SHOW_LINT_VIOLATIONS}" == "true" ]]; then
+  if [[ "${SHOW_LINT_VIOLATIONS}" == "true" ]]; then
     lint_results_rdjson="sqlfluff-lint.rdjson"
     cat <"$lint_results" |
         jq -r -f "${SCRIPT_DIR}/to-rdjson.jq" |
