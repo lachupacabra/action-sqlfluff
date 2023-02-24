@@ -59,6 +59,9 @@ if [[ -f "${INPUT_WORKING_DIRECTORY}/packages.yml" ]]; then
 fi
 echo '::endgroup::'
 
+# set unfixable errors as blank initially
+unfixable_errors=''
+
 # Format changed files if the mode is fix
 if [[ "${SQLFLUFF_COMMAND}" == "fix" ]]; then
   echo '::group:: Running sqlfluff 🐶 ...'
