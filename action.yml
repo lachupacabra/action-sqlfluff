@@ -132,10 +132,15 @@ inputs:
     default: ''
   ignore_errors:
     description: |
-      Ignore particular families of errors so that they don’t cause a failed run. 
+      Ignore particular families of errors so that they don’t cause a failed run.
       Multiple options are possible if comma separated: e.g. –ignore parsing,templating.
     required: false
-    default: ''  
+    default: ''
+  show_lint_violations:
+    description: |
+      Show lint violations for items that are not fixable
+    required: false
+    default: 'true'
 
 outputs:
   sqlfluff-results:
