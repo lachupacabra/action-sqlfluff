@@ -77,10 +77,10 @@ if [[ "${SQLFLUFF_COMMAND}" == "fix" ]]; then
     $(if [[ "x${SQLFLUFF_DISABLE_NOQA}" != "x" ]]; then echo "--disable-noqa ${SQLFLUFF_DISABLE_NOQA}"; fi) \
     $(if [[ "x${SQLFLUFF_DIALECT}" != "x" ]]; then echo "--dialect ${SQLFLUFF_DIALECT}"; fi) \
     $(if [[ "x${IGNORE_ERRORS}" != "x" ]]; then echo "--ignore ${IGNORE_ERRORS}"; fi) \
-    $changed_files >> "$fix_results"
+    $changed_files >>"$fix_results"
   sqlfluff_exit_code=$?
   cat "$fix_results"
-  echo "name=sqlfluff-exit-code::${sqlfluff_exit_code}" >> $GITHUB_OUTPUT
+  echo "name=sqlfluff-exit-code::${sqlfluff_exit_code}" >>$GITHUB_OUTPUT
 
   # Get all unfixable errors in comma delimitted format
   unfixable_errors=$(sed '1,/unfixable/d' "$fix_results" |
@@ -136,7 +136,7 @@ if [[ "x${unfixable_errors}" != "x" || "${SQLFLUFF_COMMAND}" == "lint" ]]; then
     $(if [[ "x${SQLFLUFF_DIALECT}" != "x" ]]; then echo "--dialect ${SQLFLUFF_DIALECT}"; fi) \
     $(if [[ "x${SQLFLUFF_PROCESSES}" != "x" ]]; then echo "--processes ${SQLFLUFF_PROCESSES}"; fi) \
     $(if [[ "x${SQLFLUFF_RULES}" != "x" ]]; then echo "--rules ${SQLFLUFF_RULES}"; fi) \
-    $(if [[ "x${SQLFLUFF_EXCLUDE_RULES}" != "x" ]]; then echo "--exclude-rules ${ignored_rules}"; fi) \
+    $(if [[ "x${SQLFLUFF_EXCLUDE_RULES}" != "x" ]]; then echo "--exclude-rules ${SQLFLUFF_EXCLUDE_RULES}"; fi) \
     $(if [[ "x${SQLFLUFF_TEMPLATER}" != "x" ]]; then echo "--templater ${SQLFLUFF_TEMPLATER}"; fi) \
     $(if [[ "x${SQLFLUFF_DISABLE_NOQA}" != "x" ]]; then echo "--disable-noqa ${SQLFLUFF_DISABLE_NOQA}"; fi) \
     $(if [[ "x${IGNORE_ERRORS}" != "x" ]]; then echo "--ignore ${IGNORE_ERRORS}"; fi) \
@@ -147,10 +147,10 @@ if [[ "x${unfixable_errors}" != "x" || "${SQLFLUFF_COMMAND}" == "lint" ]]; then
   # If lint change exit code
   if [[ "${SQLFLUFF_COMMAND:?}" == "lint" ]]; then
     sqlfluff_exit_code=$?
-    echo "name=sqlfluff-exit-code::${sqlfluff_exit_code}" >> $GITHUB_OUTPUT
+    echo "name=sqlfluff-exit-code::${sqlfluff_exit_code}" >>$GITHUB_OUTPUT
   fi
 
-  echo "name=sqlfluff-results::$(cat <"$lint_results" | jq -r -c '.')" >> $GITHUB_OUTPUT # Convert to a single line
+  echo "name=sqlfluff-results::$(cat <"$lint_results" | jq -r -c '.')" >>$GITHUB_OUTPUT # Convert to a single line
 
   set -Eeuo pipefail
   echo '::endgroup::'
@@ -173,8 +173,8 @@ if [[ "x${unfixable_errors}" != "x" || "${SQLFLUFF_COMMAND}" == "lint" ]]; then
       -level="${REVIEWDOG_LEVEL}"
   reviewdog_return_code="${PIPESTATUS[1]}"
 
-  echo "name=sqlfluff-results-rdjson::$(cat <"$lint_results_rdjson" | jq -r -c '.')" >> $GITHUB_OUTPUT # Convert to a single line
-  echo "name=reviewdog-return-code::${reviewdog_return_code}" >> $GITHUB_OUTPUT
+  echo "name=sqlfluff-results-rdjson::$(cat <"$lint_results_rdjson" | jq -r -c '.')" >>$GITHUB_OUTPUT # Convert to a single line
+  echo "name=reviewdog-return-code::${reviewdog_return_code}" >>$GITHUB_OUTPUT
 
   set -Eeuo pipefail
   echo '::endgroup::'
