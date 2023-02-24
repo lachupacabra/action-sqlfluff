@@ -159,7 +159,6 @@ elif [[ "${SQLFLUFF_COMMAND}" == "fix" ]]; then
     -level="${REVIEWDOG_LEVEL}" <"${temp_file}" || exit_code=$?
 
   # Clean up
-  git stash drop || true
   set -Eeuo pipefail
   echo '::endgroup::'
 
@@ -206,6 +205,7 @@ elif [[ "${SQLFLUFF_COMMAND}" == "fix" ]]; then
 
   echo "name=sqlfluff-results-rdjson::$(cat <"$lint_results_rdjson" | jq -r -c '.')" >> $GITHUB_OUTPUT # Convert to a single line
 
+  git stash drop || true
   set -Eeuo pipefail
   echo '::endgroup::'
   fi
