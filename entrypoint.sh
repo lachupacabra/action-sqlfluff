@@ -77,8 +77,8 @@ if [[ "${SQLFLUFF_COMMAND:?}" == "lint" ]]; then
     $(if [[ "x${SQLFLUFF_DISABLE_NOQA}" != "x" ]]; then echo "--disable-noqa ${SQLFLUFF_DISABLE_NOQA}"; fi) \
     $(if [[ "x${IGNORE_ERRORS}" != "x" ]]; then echo "--ignore ${IGNORE_ERRORS}"; fi) \
     $(if [[ "x${SQLFLUFF_DIALECT}" != "x" ]]; then echo "--dialect ${SQLFLUFF_DIALECT}"; fi) \
-    $changed_files >> "$lint_results"
-  sqlfluff_exit_code=$?   
+    $changed_files >>"$lint_results"
+  sqlfluff_exit_code=$?
   cat "$lint_results"
 
   echo "name=sqlfluff-results::$(cat <"$lint_results" | jq -r -c '.')" >> $GITHUB_OUTPUT # Convert to a single line
@@ -132,13 +132,13 @@ elif [[ "${SQLFLUFF_COMMAND}" == "fix" ]]; then
     $(if [[ "x${SQLFLUFF_DIALECT}" != "x" ]]; then echo "--dialect ${SQLFLUFF_DIALECT}"; fi) \
     $(if [[ "x${IGNORE_ERRORS}" != "x" ]]; then echo "--ignore ${IGNORE_ERRORS}"; fi) \
     $(if [[ "x${SHOW_LINT_VIOLATIONS}" != "x" ]]; then echo "--show-lint-violations ${SHOW_LINT_VIOLATIONS}"; fi) \
-    $changed_files >> "$lint_results"
-  sqlfluff_exit_code=$?   
+    $changed_files >>"$lint_results"
+  sqlfluff_exit_code=$?
   cat "$lint_results"
 
-  echo "name=sqlfluff-results::$(cat <"$lint_results" | jq -r -c '.')" >> $GITHUB_OUTPUT # Convert to a single line
-  echo "name=sqlfluff-exit-code::${sqlfluff_exit_code}" >> $GITHUB_OUTPUT
-  
+  echo "name=sqlfluff-results::$(cat <"$lint_results" | jq -r -c '.')" >>$GITHUB_OUTPUT # Convert to a single line
+  echo "name=sqlfluff-exit-code::${sqlfluff_exit_code}" >>$GITHUB_OUTPUT
+
   set -Eeuo pipefail
   echo '::endgroup::'
 
@@ -165,11 +165,11 @@ elif [[ "${SQLFLUFF_COMMAND}" == "fix" ]]; then
   if [[ "${SHOW_LINT_VIOLATIONS}" == "true" ]]; then
     lint_results_rdjson="sqlfluff-lint.rdjson"
     cat <"$lint_results" |
-        jq -r -f "${SCRIPT_DIR}/to-rdjson.jq" |
-        tee >"$lint_results_rdjson"
+      jq -r -f "${SCRIPT_DIR}/to-rdjson.jq" |
+      tee >"$lint_results_rdjson"
 
     cat <"$lint_results_rdjson" |
-        reviewdog -f=rdjson \
+      reviewdog -f=rdjson \
         -name="sqlfluff-lint" \
         -reporter="${REVIEWDOG_REPORTER}" \
         -filter-mode="${REVIEWDOG_FILTER_MODE}" \
@@ -177,7 +177,7 @@ elif [[ "${SQLFLUFF_COMMAND}" == "fix" ]]; then
         -level="${REVIEWDOG_LEVEL}"
     reviewdog_return_code="${PIPESTATUS[1]}"
 
-    echo "name=sqlfluff-results-rdjson::$(cat <"$lint_results_rdjson" | jq -r -c '.')" >> $GITHUB_OUTPUT # Convert to a single line
+    echo "name=sqlfluff-results-rdjson::$(cat <"$lint_results_rdjson" | jq -r -c '.')" >>$GITHUB_OUTPUT # Convert to a single line
   fi
 
   # Clean up
