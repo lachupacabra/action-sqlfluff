@@ -274,6 +274,13 @@ reviewdog version.
         </a>
     </td>
     <td align="center">
+        <a href="https://github.com/treydott">
+            <img src="https://avatars.githubusercontent.com/u/17102823?v=4" width="100;" alt="treydott"/>
+            <br />
+            <sub><b>Ozai</b></sub>
+        </a>
+    </td>
+    <td align="center">
         <a href="https://github.com/onesuper">
             <img src="https://avatars.githubusercontent.com/u/977633?v=4" width="100;" alt="onesuper"/>
             <br />
@@ -286,7 +293,8 @@ reviewdog version.
             <br />
             <sub><b>Snyk Bot</b></sub>
         </a>
-    </td>
+    </td></tr>
+<tr>
     <td align="center">
         <a href="https://github.com/kieronellis">
             <img src="https://avatars.githubusercontent.com/u/69465049?v=4" width="100;" alt="kieronellis"/>
