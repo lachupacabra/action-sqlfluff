@@ -11,12 +11,12 @@ export REVIEWDOG_GITHUB_API_TOKEN="${INPUT_GITHUB_TOKEN:?}"
 git config --global --add safe.directory /github/workspace
 
 # Special function to either use set-output or echo >> GITHUB_OUTPUT
-function set_output () {
+function set_output() {
   if [[ -z "${GITHUB_OUTPUT}" ]]; then
     echo "set-output ${1}"
     echo "::set-output ${1}"
   else
-    echo "${1}" >> $GITHUB_OUTPUT
+    echo "${1}" >>$GITHUB_OUTPUT
   fi
 }
 
