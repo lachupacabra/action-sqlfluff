@@ -10,6 +10,16 @@ export REVIEWDOG_GITHUB_API_TOKEN="${INPUT_GITHUB_TOKEN:?}"
 # Avoid 'fatal: detected dubious ownership in repository'
 git config --global --add safe.directory /github/workspace
 
+# Special function to either use set-output or echo >> GITHUB_OUTPUT
+function set_output() {
+  if [[ -z "${GITHUB_OUTPUT}" ]]; then
+    echo "set-output ${1}"
+    echo "::set-output ${1}"
+  else
+    echo "${1}" >>$GITHUB_OUTPUT
+  fi
+}
+
 # Get changed files
 echo '::group::🐶 Get changed files'
 
@@ -27,8 +37,8 @@ echo "$changed_files"
 # Halt the job
 if [[ "${changed_files}" == "" ]]; then
   echo "There is no changed files. The action doesn't scan files."
-  echo "name=sqlfluff-exit-code::0" >> $GITHUB_OUTPUT
-  echo "name=reviewdog-return-code::0" >> $GITHUB_OUTPUT
+  set_output "name=sqlfluff-exit-code::0"
+  set_output "name=reviewdog-return-code::0"
   exit 0
 fi
 echo '::endgroup::'
@@ -83,7 +93,7 @@ if [[ "${SQLFLUFF_COMMAND}" == "fix" ]]; then
     $changed_files >>"$fix_results"
   sqlfluff_exit_code=$?
   cat "$fix_results"
-  echo "name=sqlfluff-exit-code::${sqlfluff_exit_code}" >>$GITHUB_OUTPUT
+  set_output "name=sqlfluff-exit-code::${sqlfluff_exit_code}"
 
   # Get all unfixable errors in comma delimitted format
   unfixable_errors=$(sed '1,/unfixable/d' "$fix_results" |
@@ -150,10 +160,10 @@ if [[ "x${unfixable_errors}" != "x" || "${SQLFLUFF_COMMAND}" == "lint" ]]; then
   # If lint change exit code
   if [[ "${SQLFLUFF_COMMAND:?}" == "lint" ]]; then
     sqlfluff_exit_code=$?
-    echo "name=sqlfluff-exit-code::${sqlfluff_exit_code}" >>$GITHUB_OUTPUT
+    set_output "name=sqlfluff-exit-code::${sqlfluff_exit_code}"
   fi
 
-  echo "name=sqlfluff-results::$(cat <"$lint_results" | jq -r -c '.')" >>$GITHUB_OUTPUT # Convert to a single line
+  set_output "name=sqlfluff-results::$(cat <"$lint_results" | jq -r -c '.')" # Convert to a single line
 
   set -Eeuo pipefail
   echo '::endgroup::'
@@ -176,8 +186,8 @@ if [[ "x${unfixable_errors}" != "x" || "${SQLFLUFF_COMMAND}" == "lint" ]]; then
       -level="${REVIEWDOG_LEVEL}"
   reviewdog_return_code="${PIPESTATUS[1]}"
 
-  echo "name=sqlfluff-results-rdjson::$(cat <"$lint_results_rdjson" | jq -r -c '.')" >>$GITHUB_OUTPUT # Convert to a single line
-  echo "name=reviewdog-return-code::${reviewdog_return_code}" >>$GITHUB_OUTPUT
+  set_output "name=sqlfluff-results-rdjson::$(cat <"$lint_results_rdjson" | jq -r -c '.')" # Convert to a single line
+  set_output "name=reviewdog-return-code::${reviewdog_return_code}"
 
   set -Eeuo pipefail
   echo '::endgroup::'
