@@ -267,17 +267,17 @@ reviewdog version.
         </a>
     </td>
     <td align="center">
-        <a href="https://github.com/vgw-chriskruger">
-            <img src="https://avatars.githubusercontent.com/u/118869997?v=4" width="100;" alt="vgw-chriskruger"/>
-            <br />
-            <sub><b>Chris Kruger</b></sub>
-        </a>
-    </td>
-    <td align="center">
         <a href="https://github.com/treydott">
             <img src="https://avatars.githubusercontent.com/u/17102823?v=4" width="100;" alt="treydott"/>
             <br />
             <sub><b>Ozai</b></sub>
+        </a>
+    </td>
+    <td align="center">
+        <a href="https://github.com/vgw-chriskruger">
+            <img src="https://avatars.githubusercontent.com/u/118869997?v=4" width="100;" alt="vgw-chriskruger"/>
+            <br />
+            <sub><b>Chris Kruger</b></sub>
         </a>
     </td>
     <td align="center">
